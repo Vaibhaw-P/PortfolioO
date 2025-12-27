@@ -1,16 +1,17 @@
 import { Navigation } from "@/components/Navigation";
 import { Input } from "@/components/Input";
-import { useSendMessage } from "@/hooks/use-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertMessageSchema, type InsertMessage } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Loader2, ArrowRight } from "lucide-react";
+import emailjs from "@emailjs/browser";
+import { useRef } from "react";
 
 export default function Contact() {
   const { toast } = useToast();
-  const sendMessage = useSendMessage();
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const form = useForm<InsertMessage>({
     resolver: zodResolver(insertMessageSchema),
@@ -21,22 +22,38 @@ export default function Contact() {
     },
   });
 
-  const onSubmit = (data: InsertMessage) => {
-    sendMessage.mutate(data, {
-      onSuccess: () => {
-        toast({ title: "Message sent", description: "I'll get back to you soon." });
-        form.reset();
-      },
-      onError: (error) => {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      },
-    });
+  const onSubmit = async (data: InsertMessage) => {
+    try {
+      await emailjs.send(
+        "service_ot32vje", 
+        "template_0cky7rq",    
+        {
+          name: data.name,
+          email: data.email,
+          message: data.message,
+        },
+        "oSQFuFUjOtX5kTV9l"      // <-- change
+      );
+
+      toast({
+        title: "Message sent 🎉",
+        description: "Thanks for reaching out. I’ll get back to you soon.",
+      });
+
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      
+
       <main className="pt-32 px-6 lg:px-24 pb-24 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <motion.div
@@ -48,19 +65,45 @@ export default function Contact() {
               SAY <br /> <span className="text-primary">HELLO.</span>
             </h1>
             <p className="font-body text-xl text-muted-foreground max-w-md">
-              Available for freelance projects and open to full-time opportunities. Let's build something unforgettable.
+              Available for freelance projects and open to full-time opportunities.
+              Let's build something unforgettable.
             </p>
 
             <div className="mt-16 space-y-4">
               <div className="block">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">Email</span>
-                <a href="mailto:vaibhavpandey.engineer@gmail.com" className="font-display text-2xl hover:text-primary transition-colors">vaibhavpandey.engineer@gmail.com</a>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">
+                  Email
+                </span>
+                <a
+                  href="mailto:vaibhavpandey.engineer@gmail.com"
+                  className="font-display text-2xl hover:text-primary transition-colors"
+                >
+                  vaibhavpandey.engineer@gmail.com
+                </a>
               </div>
+
               <div className="block">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">Socials</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">
+                  Socials
+                </span>
                 <div className="flex gap-6 font-display text-lg">
-                  <a href="https://github.com/Vaibhaw-P" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">GitHub</a>
-                  <a href="https://www.linkedin.com/in/vaibhavpandeydev/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">LinkedIn</a>
+                  <a
+                    href="https://github.com/Vaibhaw-P"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    GitHub
+                  </a>
+
+                  <a
+                    href="https://www.linkedin.com/in/vaibhavpandeydev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    LinkedIn
+                  </a>
                 </div>
               </div>
             </div>
@@ -72,24 +115,29 @@ export default function Contact() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-card/5 backdrop-blur-sm p-8 md:p-12 border border-border/50"
           >
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
-              <Input 
-                label="Your Name" 
-                placeholder="John Doe" 
-                {...form.register("name")} 
+            <form
+              ref={formRef}
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-12"
+            >
+              <Input
+                label="Your Name"
+                placeholder="John Doe"
+                {...form.register("name")}
               />
-              
-              <Input 
-                label="Email Address" 
+
+              <Input
+                label="Email Address"
                 type="email"
-                placeholder="john@example.com" 
-                {...form.register("email")} 
+                placeholder="john@example.com"
+                {...form.register("email")}
               />
-              
+
               <div className="w-full group">
                 <label className="block text-xs uppercase tracking-widest text-muted-foreground mb-2 group-focus-within:text-primary transition-colors">
                   Message
                 </label>
+
                 <textarea
                   {...form.register("message")}
                   rows={4}
@@ -101,15 +149,10 @@ export default function Contact() {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={sendMessage.isPending}
-                  className="group flex items-center gap-4 text-4xl font-display font-bold uppercase tracking-tight hover:text-primary transition-colors disabled:opacity-50"
+                  className="group flex items-center gap-4 text-4xl font-display font-bold uppercase tracking-tight hover:text-primary transition-colors"
                 >
-                  {sendMessage.isPending ? "Sending..." : "Send Message"}
-                  {sendMessage.isPending ? (
-                    <Loader2 className="w-8 h-8 animate-spin" />
-                  ) : (
-                    <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
-                  )}
+                  Send Message
+                  <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
                 </button>
               </div>
             </form>
