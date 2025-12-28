@@ -5,13 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertMessageSchema, type InsertMessage } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Loader2, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import emailjs from "@emailjs/browser";
-import { useRef } from "react";
 
 export default function Contact() {
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement | null>(null);
 
   const form = useForm<InsertMessage>({
     resolver: zodResolver(insertMessageSchema),
@@ -23,20 +21,30 @@ export default function Contact() {
   });
 
   const onSubmit = async (data: InsertMessage) => {
+    // EMPTY FIELD VALIDATION
+    if (!data.name || !data.email || !data.message) {
+      toast({
+        title: "Fields are empty ❗",
+        description: "Please fill all fields before sending the message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await emailjs.send(
-        "service_ot32vje", 
-        "template_0cky7rq",    
+        "YOUR_SERVICE_ID",
+        "YOUR_TEMPLATE_ID",
         {
           name: data.name,
           email: data.email,
           message: data.message,
         },
-        "oSQFuFUjOtX5kTV9l"      // <-- change
+        "YOUR_PUBLIC_KEY"
       );
 
       toast({
-        title: "Message sent 🎉",
+        title: "Message Sent 🎉",
         description: "Thanks for reaching out. I’ll get back to you soon.",
       });
 
@@ -64,13 +72,14 @@ export default function Contact() {
             <h1 className="font-display font-bold text-6xl md:text-8xl leading-none mb-8">
               SAY <br /> <span className="text-primary">HELLO.</span>
             </h1>
+
             <p className="font-body text-xl text-muted-foreground max-w-md">
               Available for freelance projects and open to full-time opportunities.
               Let's build something unforgettable.
             </p>
 
             <div className="mt-16 space-y-4">
-              <div className="block">
+              <div>
                 <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">
                   Email
                 </span>
@@ -82,7 +91,7 @@ export default function Contact() {
                 </a>
               </div>
 
-              <div className="block">
+              <div>
                 <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">
                   Socials
                 </span>
@@ -115,11 +124,7 @@ export default function Contact() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-card/5 backdrop-blur-sm p-8 md:p-12 border border-border/50"
           >
-            <form
-              ref={formRef}
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-12"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
               <Input
                 label="Your Name"
                 placeholder="John Doe"
